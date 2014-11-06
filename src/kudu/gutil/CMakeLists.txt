@@ -39,8 +39,11 @@ utf/rune.c
 
 target_link_libraries(gutil
   glog
-  protobuf
-  rt) # clock_gettime() requires -lrt
+  protobuf)
+if (NOT APPLE)
+  target_link_libraries(gutil
+    rt) # clock_gettime() requires -lrt
+endif()
 
 # Disable warnings which trigger a lot in the Google code:
 set_target_properties(gutil PROPERTIES
