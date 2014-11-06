@@ -66,14 +66,13 @@ fi
 # Check that the gperftools patch has been applied.
 # If you add or remove patches, bump the patchlevel below to ensure
 # that any new Jenkins builds pick up your patches.
-GPERFTOOLS_PATCHLEVEL=2
+GPERFTOOLS_PATCHLEVEL=1
 delete_if_wrong_patchlevel gperftools-${GPERFTOOLS_VERSION} $GPERFTOOLS_PATCHLEVEL
 
 if [ ! -d gperftools-${GPERFTOOLS_VERSION} ]; then
   fetch_and_expand gperftools-${GPERFTOOLS_VERSION}.tar.gz
 
   pushd gperftools-${GPERFTOOLS_VERSION}
-  patch -p1 < $TP_DIR/patches/gperftools-issue-560-Revert-issue-481.patch
   patch -p1 < $TP_DIR/patches/gperftools-Change-default-TCMALLOC_TRANSFER_NUM_OBJ-to-40.patch
   touch patchlevel-$GPERFTOOLS_PATCHLEVEL
   popd
@@ -105,8 +104,16 @@ if [ ! -d $RAPIDJSON_DIR ]; then
   mv rapidjson ${RAPIDJSON_DIR}
 fi
 
+SQUEASEL_PATCHLEVEL=1
+delete_if_wrong_patchlevel squeasel-${SQUEASEL_VERSION} $SQUEASEL_PATCHLEVEL
 if [ ! -d $SQUEASEL_DIR ]; then
   fetch_and_expand squeasel-${SQUEASEL_VERSION}.tar.gz
+
+  pushd squeasel-${SQUEASEL_VERSION}
+  patch -p0 < $TP_DIR/patches/squeasel-build-on-macosx.patch
+  touch patchlevel-$SQUEASEL_PATCHLEVEL
+  popd
+  echo
 fi
 
 if [ ! -d $GSG_DIR ]; then

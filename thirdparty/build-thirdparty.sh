@@ -169,16 +169,14 @@ fi
 # Build squeasel
 # Disabled for OSX due to references to prctl and CLOCK_MONOTONIC, means you can't build Kudu
 # at the moment.
-if [ "$OS_LINUX" ]; then
-  if [ -n "$F_ALL" -o -n "$F_SQUEASEL" ]; then
-    # Mongoose's Makefile builds a standalone web server, whereas we just want
-    # a static lib
-    cd $SQUEASEL_DIR
-    ${CC:-gcc} -fno-omit-frame-pointer -std=c99 -O3 -DNDEBUG -DNO_SSL_DL -fPIC -c squeasel.c
-    ar rs libsqueasel.a squeasel.o
-    cp libsqueasel.a $PREFIX/lib/
-    cp squeasel.h $PREFIX/include/
-  fi
+if [ -n "$F_ALL" -o -n "$F_SQUEASEL" ]; then
+  # Mongoose's Makefile builds a standalone web server, whereas we just want
+  # a static lib
+  cd $SQUEASEL_DIR
+  ${CC:-gcc} -fno-omit-frame-pointer -std=c99 -O3 -DNDEBUG -DNO_SSL_DL -fPIC -c squeasel.c
+  ar rs libsqueasel.a squeasel.o
+  cp libsqueasel.a $PREFIX/lib/
+  cp squeasel.h $PREFIX/include/
 fi
 
 # Build curl
