@@ -7,6 +7,8 @@ PROTOBUF_GENERATE_CPP(FS_PROTO_SRCS FS_PROTO_HDRS
   PROTO_FILES fs.proto)
 
 add_library(fs_proto ${FS_PROTO_SRCS} ${FS_PROTO_HDRS})
+target_link_libraries(fs_proto
+  protobuf)
 
 add_library(kudu_fs
   block_id.cc
