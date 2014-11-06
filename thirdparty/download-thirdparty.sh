@@ -110,7 +110,7 @@ if [ ! -d $SQUEASEL_DIR ]; then
   fetch_and_expand squeasel-${SQUEASEL_VERSION}.tar.gz
 
   pushd squeasel-${SQUEASEL_VERSION}
-  patch -p0 < $TP_DIR/patches/squeasel-build-on-macosx.patch
+  patch -p0 < $TP_DIR/patches/squeasel_build-on-macosx.patch
   touch patchlevel-$SQUEASEL_PATCHLEVEL
   popd
   echo
