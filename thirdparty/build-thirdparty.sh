@@ -99,6 +99,7 @@ if [ -n "$F_ALL" -o -n "$F_GLOG" ]; then
   cd $GLOG_DIR
   # Help glog find libunwind.
   CPPFLAGS=-I$PREFIX/include \
+    CXXFLAGS=-stdlib=libstdc++ \
     LDFLAGS=-L$PREFIX/lib \
     ./configure --with-pic --prefix=$PREFIX --with-gflags=$PREFIX
   make -j$PARALLEL install
@@ -245,11 +246,13 @@ if [ -n "$F_ALL" -o -n "$F_LLVM" ]; then
   # the best.
   # - http://llvm.org/bugs/show_bug.cgi?id=16532
   # - http://code.google.com/p/address-sanitizer/issues/detail?id=146
-  CLANG=$(which clang || :)
-  CLANGXX=$(which clang++ || :)
-  if [ -n "$CLANG" -a -n "$CLANGXX" -a -z "$CC" -a -z "$CXX" ]; then
-    export CC=$CLANG
-    export CXX=$CLANGXX
+  if [ "$OS_LINUX" ]; then
+    CLANG=$(which clang || :)
+    CLANGXX=$(which clang++ || :)
+    if [ -n "$CLANG" -a -n "$CLANGXX" -a -z "$CC" -a -z "$CXX" ]; then
+      export CC=$CLANG
+      export CXX=$CLANGXX
+    fi
   fi
 
   # Rebuild the CMake cache every time.
@@ -260,12 +263,11 @@ if [ -n "$F_ALL" -o -n "$F_LLVM" ]; then
     -DCMAKE_INSTALL_PREFIX=$PREFIX \
     -DLLVM_TARGETS_TO_BUILD=X86 \
     $LLVM_DIR
+  make -j$PARALLEL install
   if [ -n $CLANG -a -n $CLANGXX ]; then
     unset CC
     unset CXX
   fi
-
-  make -j$PARALLEL install
 fi
 
 # Remove any old thirdparty deps which hung around from previous versions

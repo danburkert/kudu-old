@@ -283,7 +283,9 @@ endif()
 # product like this).
 #
 # See https://sourceware.org/bugzilla/show_bug.cgi?id=16979 for details.
-execute_process(COMMAND ${CMAKE_CXX_COMPILER} -Wl,--version OUTPUT_VARIABLE LINKER_OUTPUT)
+if (NOT APPLE)
+  execute_process(COMMAND ${CMAKE_CXX_COMPILER} -Wl,--version OUTPUT_VARIABLE LINKER_OUTPUT)
+endif()
 if (LINKER_OUTPUT MATCHES "gold")
   if ("${KUDU_LINK}" STREQUAL "d" AND
       "${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE")
@@ -322,7 +324,10 @@ set(BUILD_OUTPUT_ROOT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build/${CMAKE_BUILD
 # accidentally running the latest debug build when in fact they're building
 # release builds.
 FILE(MAKE_DIRECTORY ${BUILD_OUTPUT_ROOT_DIRECTORY})
-EXECUTE_PROCESS(COMMAND ln -T -sf ${BUILD_OUTPUT_ROOT_DIRECTORY}
+if (NOT APPLE)
+  set(MORE_ARGS "-T")
+endif()
+EXECUTE_PROCESS(COMMAND ln ${MORE_ARGS} -sf ${BUILD_OUTPUT_ROOT_DIRECTORY}
   ${CMAKE_CURRENT_SOURCE_DIR}/build/latest)
 
 # where to put generated archives (.a files)
