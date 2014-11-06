@@ -24,6 +24,11 @@
 #include <string>
 using std::string;
 
+#if defined(__APPLE__)
+#include <mach/clock.h>
+#include <mach/mach.h>
+#endif  // defined(__APPLE__)
+
 #include "kudu/gutil/integral_types.h"
 
 typedef double WallTime;
@@ -53,7 +58,17 @@ typedef int64 MicrosecondsInt64;
 // Returns the time since the Epoch measured in microseconds.
 inline MicrosecondsInt64 GetCurrentTimeMicros() {
   timespec ts;
+#if defined(linux)
   clock_gettime(CLOCK_REALTIME, &ts);
+#elif defined(__APPLE__)
+  clock_serv_t cclock;
+  mach_timespec_t mts;
+  host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+  clock_get_time(cclock, &mts);
+  mach_port_deallocate(mach_task_self(), cclock);
+  ts.tv_sec = mts.tv_sec;
+  ts.tv_nsec = mts.tv_nsec;
+#endif  // defined(linux)
   return ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
 }
 
