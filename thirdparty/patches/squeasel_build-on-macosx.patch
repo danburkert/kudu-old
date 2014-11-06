@@ -1,85 +1,97 @@
---- squeasel.c	2014-11-06 11:38:17.000000000 -0800
-+++ squeasel.c	2014-11-06 11:37:31.000000000 -0800
-@@ -26,7 +26,10 @@
- #define __STDC_FORMAT_MACROS  // <inttypes.h> wants this for C++
- #define __STDC_LIMIT_MACROS   // C++ wants that for INT64_MAX
- 
-+#if defined(OS_LINUX)
- #include <sys/prctl.h>
-+#endif  // defined(OS_LINUX)
-+
- #include <sys/types.h>
- #include <sys/stat.h>
- #include <errno.h>
-@@ -34,6 +37,11 @@
- #include <fcntl.h>
- 
- #include <time.h>
-+#if defined(OS_MACOSX)
-+#include <mach/clock.h>
-+#include <mach/mach.h>
-+#endif  // defined(OS_MACOSX)
-+
- #include <stdlib.h>
- #include <stdarg.h>
- #include <assert.h>
-@@ -4442,10 +4450,19 @@
-   // we'll stop waiting and shut down the thread.
-   while (ctx->sq_head == ctx->sq_tail && ctx->stop_flag == 0) {
-     struct timespec timeout;
-+#if defined(OS_LINUX)
-     if (clock_gettime(CLOCK_MONOTONIC, &timeout) != 0) {
-       perror("Unable to get CLOCK_MONOTONIC");
-       abort(); // CLOCK_MONOTONIC should always be supported
-     }
-+#elif defined(OS_MACOSX)
-+    clock_serv_t cclock;
-+    mach_timespec_t mts;
-+    host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
-+    clock_get_time(cclock, &mts);
-+    mach_port_deallocate(mach_task_self(), cclock);
-+    timeout.tv_sec = mts.tv_sec;
-+#endif  // defined(OS_LINUX)
- 
-     ctx->num_free_threads++;
-     assert(ctx->num_free_threads <= ctx->num_threads);
-@@ -4484,7 +4501,11 @@
- }
- 
- static void *worker_thread(void *thread_func_param) {
-+#if defined(OS_LINUX)
-   (void)prctl(PR_SET_NAME, "sq_worker");
-+#elif defined(OS_MACOSX)
-+  dynamic_pthread_setname_np("sq_worker");
-+#endif  // defined(OS_LINUX)
- 
-   struct sq_context *ctx = (struct sq_context *) thread_func_param;
-   struct sq_connection *conn;
-@@ -4620,7 +4641,12 @@
- }
- 
- static void *master_thread(void *thread_func_param) {
-+  #if defined(OS_LINUX)
-   (void)prctl(PR_SET_NAME, "sq_acceptor");
-+  #elif defined(OS_MACOSX)
-+  dlsym(RTLD_DEFAULT, "sq_acceptor");
-+  #endif  // defined(OS_LINUX)
-+
-   struct sq_context *ctx = (struct sq_context *) thread_func_param;
-   struct pollfd *pfd;
-   int i;
-@@ -4815,11 +4841,14 @@
-   pthread_condattr_t attr;
- 
-   pthread_condattr_init(&attr);
-+
-+#if defined(OS_LINUX)
-   if (pthread_condattr_setclock(&attr, CLOCK_MONOTONIC) != 0) {
-     perror("pthread_condattr_setclock");
-     free_context(ctx);
-     return NULL;
-   }
-+#endif  // defined(OS_LINUX)
- 
-   (void) pthread_cond_init(&ctx->cond, &attr);
-   (void) pthread_cond_init(&ctx->sq_empty, &attr);
+*** squeasel.c	2014-10-16 13:38:01.000000000 -0700
+--- squeasel.c	2014-11-06 15:16:06.000000000 -0800
+***************
+*** 26,32 ****
+--- 26,35 ----
+  #define __STDC_FORMAT_MACROS  // <inttypes.h> wants this for C++
+  #define __STDC_LIMIT_MACROS   // C++ wants that for INT64_MAX
+  
++ #if defined(linux)
+  #include <sys/prctl.h>
++ #endif  // defined(linux)
++ 
+  #include <sys/types.h>
+  #include <sys/stat.h>
+  #include <errno.h>
+***************
+*** 34,39 ****
+--- 37,47 ----
+  #include <fcntl.h>
+  
+  #include <time.h>
++ #if defined(__APPLE__)
++ #include <mach/clock.h>
++ #include <mach/mach.h>
++ #endif  // defined(__APPLE__)
++ 
+  #include <stdlib.h>
+  #include <stdarg.h>
+  #include <assert.h>
+***************
+*** 4442,4451 ****
+--- 4450,4468 ----
+    // we'll stop waiting and shut down the thread.
+    while (ctx->sq_head == ctx->sq_tail && ctx->stop_flag == 0) {
+      struct timespec timeout;
++ #if defined(linux)
+      if (clock_gettime(CLOCK_MONOTONIC, &timeout) != 0) {
+        perror("Unable to get CLOCK_MONOTONIC");
+        abort(); // CLOCK_MONOTONIC should always be supported
+      }
++ #elif defined(__APPLE__)
++     clock_serv_t cclock;
++     mach_timespec_t mts;
++     host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
++     clock_get_time(cclock, &mts);
++     mach_port_deallocate(mach_task_self(), cclock);
++     timeout.tv_sec = mts.tv_sec;
++ #endif  // defined(linux)
+  
+      ctx->num_free_threads++;
+      assert(ctx->num_free_threads <= ctx->num_threads);
+***************
+*** 4484,4490 ****
+--- 4501,4511 ----
+  }
+  
+  static void *worker_thread(void *thread_func_param) {
++ #if defined(linux)
+    (void)prctl(PR_SET_NAME, "sq_worker");
++ #elif defined(__APPLE__)
++   dynamic_pthread_setname_np("sq_worker");
++ #endif  // defined(linux)
+  
+    struct sq_context *ctx = (struct sq_context *) thread_func_param;
+    struct sq_connection *conn;
+***************
+*** 4620,4626 ****
+--- 4641,4652 ----
+  }
+  
+  static void *master_thread(void *thread_func_param) {
++   #if defined(OS_LINUX)
+    (void)prctl(PR_SET_NAME, "sq_acceptor");
++   #elif defined(OS_MACOSX)
++   dlsym(RTLD_DEFAULT, "sq_acceptor");
++   #endif  // defined(OS_LINUX)
++ 
+    struct sq_context *ctx = (struct sq_context *) thread_func_param;
+    struct pollfd *pfd;
+    int i;
+***************
+*** 4815,4825 ****
+--- 4841,4854 ----
+    pthread_condattr_t attr;
+  
+    pthread_condattr_init(&attr);
++ 
++ #if defined(OS_LINUX)
+    if (pthread_condattr_setclock(&attr, CLOCK_MONOTONIC) != 0) {
+      perror("pthread_condattr_setclock");
+      free_context(ctx);
+      return NULL;
+    }
++ #endif  // defined(OS_LINUX)
+  
+    (void) pthread_cond_init(&ctx->cond, &attr);
+    (void) pthread_cond_init(&ctx->sq_empty, &attr);
