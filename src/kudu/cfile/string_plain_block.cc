@@ -87,7 +87,7 @@ uint64_t StringPlainBlockBuilder::EstimateEncodedSize() const {
   return size_estimate_;
 }
 
-uint64_t StringPlainBlockBuilder::Count() const {
+size_t StringPlainBlockBuilder::Count() const {
   return offsets_.size();
 }
 

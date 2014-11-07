@@ -231,7 +231,7 @@ class RandomAccessFile {
                       uint8_t *scratch) const = 0;
 
   // Returns the size of the file
-  virtual Status Size(uint64_t *size) const = 0;
+  virtual Status Size(size_t *size) const = 0;
 
   // Returns a string representation of the file suitable for debugging.
   virtual std::string ToString() const = 0;

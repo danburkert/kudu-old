@@ -154,7 +154,7 @@ class PosixRandomAccessFile: public RandomAccessFile {
     return s;
   }
 
-  virtual Status Size(uint64_t *size) const OVERRIDE {
+  virtual Status Size(size_t *size) const OVERRIDE {
     struct stat st;
     if (fstat(fd_, &st) == -1) {
       return IOError(filename_, errno);
@@ -193,7 +193,7 @@ class PosixMmapReadableFile: public RandomAccessFile {
     return s;
   }
 
-  virtual Status Size(uint64_t *size) const OVERRIDE {
+  virtual Status Size(size_t *size) const OVERRIDE {
     *size = length_;
     return Status::OK();
   }

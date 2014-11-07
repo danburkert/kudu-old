@@ -284,7 +284,7 @@ Status ReadPBContainerFromPath(Env* env, const std::string& path,
   gscoped_ptr<RandomAccessFile> file;
   RETURN_NOT_OK(env->NewRandomAccessFile(path, &file));
 
-  uint64_t file_size;
+  size_t file_size;
   RETURN_NOT_OK(file->Size(&file_size));
 
   // Sanity check on minimum file size for container files.

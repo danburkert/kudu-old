@@ -72,7 +72,7 @@ class CFileReader {
   // in a hot path.
   bool GetMetadataEntry(const string &key, string *val);
 
-  uint64_t file_size() const {
+  size_t file_size() const {
     return file_size_;
   }
 
@@ -144,7 +144,7 @@ class CFileReader {
 #endif
   const ReaderOptions options_;
   const gscoped_ptr<fs::ReadableBlock> block_;
-  uint64_t file_size_; // effectively const, but set in Init()
+  size_t file_size_; // effectively const, but set in Init()
 
   enum State {
     kUninitialized,
