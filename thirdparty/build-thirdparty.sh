@@ -99,7 +99,6 @@ if [ -n "$F_ALL" -o -n "$F_GLOG" ]; then
   cd $GLOG_DIR
   # Help glog find libunwind.
   CPPFLAGS=-I$PREFIX/include \
-    CXXFLAGS=-stdlib=libstdc++ \
     LDFLAGS=-L$PREFIX/lib \
     ./configure --with-pic --prefix=$PREFIX --with-gflags=$PREFIX
   make -j$PARALLEL install

@@ -43,13 +43,14 @@ fetch_and_expand() {
   echo
 }
 
-GLOG_PATCHLEVEL=1
+GLOG_PATCHLEVEL=2
 delete_if_wrong_patchlevel glog-${GLOG_VERSION} $GLOG_PATCHLEVEL
 if [ ! -d glog-${GLOG_VERSION} ]; then
   fetch_and_expand glog-${GLOG_VERSION}.tar.gz
 
   pushd glog-${GLOG_VERSION}
   patch -p0 < $TP_DIR/patches/glog-issue-198-fix-unused-warnings.patch
+  patch -p0 < $TP_DIR/patches/glog-issue-121-fix-clang-libcpp.patch
   touch patchlevel-$GLOG_PATCHLEVEL
   popd
   echo
