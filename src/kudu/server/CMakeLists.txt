@@ -20,10 +20,16 @@ target_link_libraries(metadata_proto
 # server_common
 #########################################
 
-set(SERVER_COMMON_SRCS
-  hybrid_clock.cc
-  logical_clock.cc
-)
+if (APPLE)
+  set(SERVER_COMMON_SRCS
+    logical_clock.cc
+  )
+else ()
+  set(SERVER_COMMON_SRCS
+    hybrid_clock.cc
+    logical_clock.cc
+  )
+endif ()
 
 add_library(server_common ${SERVER_COMMON_SRCS})
 target_link_libraries(server_common
