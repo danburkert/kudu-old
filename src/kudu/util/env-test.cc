@@ -339,7 +339,7 @@ class TestEnv : public KuduTest {
     // Check that the file has both strings.
     shared_ptr<RandomAccessFile> reader;
     ASSERT_OK(env_util::OpenFileForRandom(env_.get(), test_path, &reader));
-    uint64_t size;
+    size_t size;
     ASSERT_OK(reader->Size(&size));
     ASSERT_EQ(first.length() + second.length(), size);
     Slice s;
@@ -415,7 +415,7 @@ class ShortReadRandomAccessFile : public RandomAccessFile {
     return wrapped_->Read(offset, short_n, result, scratch);
   }
 
-  virtual Status Size(uint64_t *size) const OVERRIDE {
+  virtual Status Size(size_t *size) const OVERRIDE {
     return wrapped_->Size(size);
   }
 
@@ -494,7 +494,7 @@ TEST_F(TestEnv, TestOpenEmptyRandomAccessFile) {
   ASSERT_NO_FATAL_FAILURE(WriteTestFile(env, test_file, 0));
   gscoped_ptr<RandomAccessFile> readable_file;
   ASSERT_OK(env->NewRandomAccessFile(test_file, &readable_file));
-  uint64_t size;
+  size_t size;
   ASSERT_OK(readable_file->Size(&size));
   ASSERT_EQ(0, size);
 }
