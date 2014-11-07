@@ -135,6 +135,9 @@ if ("${COMPILER_FAMILY}" STREQUAL "clang")
   else()
     message("Running without a controlling terminal or in a dumb terminal")
   endif()
+
+  # Use libstdc++ and not libc++. The latter lacks support for tr1/memory.
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")
 endif()
 
 # Sanity check linking option.

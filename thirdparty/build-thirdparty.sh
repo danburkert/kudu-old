@@ -9,6 +9,7 @@ if [[ "$OSTYPE" =~ ^linux ]]; then
   OS_LINUX=1
 elif [[ "$OSTYPE" == "darwin"* ]]; then
   OS_OSX=1
+  EXTRA_CXXFLAGS="-stdlib=libstdc++"
 fi
 
 source $TP_DIR/vars.sh
@@ -70,7 +71,7 @@ export PATH=$PREFIX/bin:$PATH
 # build cmake
 if [ -n "$F_ALL" -o -n "$F_CMAKE" ]; then
   cd $CMAKE_DIR
-  ./bootstrap --prefix=$PREFIX --parallel=8
+  CXXFLAGS=$EXTRA_CXXFLAGS ./bootstrap --prefix=$PREFIX --parallel=8
   make -j$PARALLEL
   make install
 fi
@@ -78,7 +79,8 @@ fi
 # build gflags
 if [ -n "$F_ALL" -o -n "$F_GFLAGS" ]; then
   cd $GFLAGS_DIR
-  ./configure --with-pic --prefix=$PREFIX
+  autoreconf -fvi
+  CXXFLAGS=$EXTRA_CXXFLAGS ./configure --with-pic --prefix=$PREFIX
   make -j$PARALLEL install
 fi
 
@@ -97,8 +99,10 @@ fi
 # build glog
 if [ -n "$F_ALL" -o -n "$F_GLOG" ]; then
   cd $GLOG_DIR
+  autoreconf -fvi
   # Help glog find libunwind.
-  CPPFLAGS=-I$PREFIX/include \
+  CXXFLAGS=$EXTRA_CXXFLAGS \
+    CPPFLAGS=-I$PREFIX/include \
     LDFLAGS=-L$PREFIX/lib \
     ./configure --with-pic --prefix=$PREFIX --with-gflags=$PREFIX
   make -j$PARALLEL install
@@ -107,7 +111,8 @@ fi
 # build gperftools
 if [ -n "$F_ALL" -o -n "$F_GPERFTOOLS" ]; then
   cd $GPERFTOOLS_DIR
-  ./configure --enable-frame-pointers --with-pic --prefix=$PREFIX
+  autoreconf -fvi
+  CXXFLAGS=$EXTRA_CXXFLAGS ./configure --enable-frame-pointers --with-pic --prefix=$PREFIX
   make -j$PARALLEL install
 fi
 
@@ -117,7 +122,8 @@ if [ -n "$F_ALL" -o -n "$F_GMOCK" ]; then
   # Run the static library build, then the shared library build.
   for SHARED in OFF ON; do
     rm -rf CMakeCache.txt CMakeFiles/
-    CXXFLAGS='-fPIC -g' $PREFIX/bin/cmake -DBUILD_SHARED_LIBS=$SHARED .
+    CXXFLAGS="-fPIC -g $EXTRA_CXXFLAGS" \
+      $PREFIX/bin/cmake -DBUILD_SHARED_LIBS=$SHARED .
     make -j$PARALLEL
   done
 fi
@@ -125,14 +131,17 @@ fi
 # build protobuf
 if [ -n "$F_ALL" -o -n "$F_PROTOBUF" ]; then
   cd $PROTOBUF_DIR
-  ./configure --with-pic --enable-shared --enable-static --prefix=$PREFIX
+  autoreconf -fvi
+  CXXFLAGS=$EXTRA_CXXFLAGS ./configure --with-pic --enable-shared --enable-static --prefix=$PREFIX
   make -j$PARALLEL install
 fi
 
 # build snappy
 if [ -n "$F_ALL" -o -n "$F_SNAPPY" ]; then
   cd $SNAPPY_DIR
-  ./configure --with-pic --prefix=$PREFIX
+  autoreconf -fvi
+  CXXFLAGS=$EXTRA_CXXFLAGS \
+    ./configure --with-pic --prefix=$PREFIX
   make -j$PARALLEL install
 fi
 
@@ -166,8 +175,6 @@ if [ -n "$F_ALL" -o -n "$F_RAPIDJSON" ]; then
 fi
 
 # Build squeasel
-# Disabled for OSX due to references to prctl and CLOCK_MONOTONIC, means you can't build Kudu
-# at the moment.
 if [ -n "$F_ALL" -o -n "$F_SQUEASEL" ]; then
   # Mongoose's Makefile builds a standalone web server, whereas we just want
   # a static lib
@@ -209,7 +216,8 @@ fi
 if [ -n "$F_ALL" -o -n "$F_CRCUTIL" ]; then
   cd $CRCUTIL_DIR
   ./autogen.sh
-  ./configure --prefix=$PREFIX
+  CXXFLAGS=$EXTRA_CXXFLAGS \
+    ./configure --prefix=$PREFIX
   make -j$PARALLEL install
 fi
 
