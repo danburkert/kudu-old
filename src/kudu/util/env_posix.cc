@@ -9,9 +9,6 @@
 #include <fcntl.h>
 #include <fts.h>
 #include <glog/logging.h>
-#if !defined(__APPLE__)
-#include <linux/falloc.h>
-#endif  // !defined(__APPLE__)
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,6 +35,7 @@
 
 #if !defined(__APPLE__)
 #include <linux/falloc.h>
+#endif  // !defined(__APPLE__)
 // Copied from falloc.h. Useful for older kernels that lack support for
 // hole punching; fallocate(2) will return EOPNOTSUPP.
 #ifndef FALLOC_FL_KEEP_SIZE
@@ -46,7 +44,16 @@
 #ifndef FALLOC_FL_PUNCH_HOLE
 #define FALLOC_FL_PUNCH_HOLE  0x02 /* de-allocates range */
 #endif
-#endif  // !defined(__APPLE__)
+
+// For platforms without fdatasync (like Mac OS)
+#ifndef fdatasync
+#define fdatasync fsync
+#endif
+
+// For platforms without unlocked_stdio (like Mac OS)
+#ifndef fread_unlocked
+#define fread_unlocked fread
+#endif
 
 using base::subtle::Atomic64;
 using base::subtle::Barrier_AtomicIncrement;
@@ -322,6 +329,8 @@ class PosixMmapFile : public WritableFile {
   }
 
   virtual Status PreAllocate(uint64_t size) OVERRIDE {
+    // TODO: Implement using fcntl().
+#if !defined(__APPLE__)
     uint64_t offset = std::max(filesize_, pre_allocated_size_);
     if (fallocate(fd_, 0, offset, size) < 0) {
       return IOError(filename_, errno);
@@ -329,6 +338,7 @@ class PosixMmapFile : public WritableFile {
     // Make sure that we set pre_allocated_size so that the file
     // doesn't get truncated on MapNewRegion().
     pre_allocated_size_ = offset + size;
+#endif
     return Status::OK();
   }
 
@@ -402,6 +412,8 @@ class PosixMmapFile : public WritableFile {
   }
 
   virtual Status FlushRange(FlushMode mode, uint64_t offset, uint64_t length) OVERRIDE {
+#ifdef linux
+    // sync_file_range() is Linux-only.
     int flags = SYNC_FILE_RANGE_WRITE;
     if (mode == FLUSH_SYNC) {
       flags |= SYNC_FILE_RANGE_WAIT_AFTER;
@@ -409,6 +421,7 @@ class PosixMmapFile : public WritableFile {
     if (sync_file_range(fd_, offset, length, flags) < 0) {
       return IOError(filename_, errno);
     }
+#endif
     return Status::OK();
   }
 
@@ -454,10 +467,14 @@ class PosixMmapFile : public WritableFile {
   virtual string ToString() const OVERRIDE { return filename_; }
 
   virtual Status PunchHole(uint64_t offset, uint64_t length) OVERRIDE {
+#ifdef linux
     if (fallocate(fd_, FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE, offset, length) < 0) {
       return IOError(filename_, errno);
     }
     return Status::OK();
+#else
+    return Status::NotSupported("Hole punching not supported on this platform");
+#endif
   }
 };
 
@@ -510,6 +527,8 @@ class PosixWritableFile : public WritableFile {
   }
 
   virtual Status PreAllocate(uint64_t size) OVERRIDE {
+    // TODO: Implement preallocation for Mac OS using fcntl().
+#if !defined(__APPLE__)
     uint64_t offset = std::max(filesize_, pre_allocated_size_);
     if (fallocate(fd_, 0, offset, size) < 0) {
       if (errno == EOPNOTSUPP) {
@@ -522,6 +541,7 @@ class PosixWritableFile : public WritableFile {
     } else {
       pre_allocated_size_ = offset + size;
     }
+#endif
     return Status::OK();
   }
 
@@ -562,6 +582,7 @@ class PosixWritableFile : public WritableFile {
   }
 
   virtual Status FlushRange(FlushMode mode, uint64_t offset, uint64_t length) OVERRIDE {
+#ifdef linux
     int flags = SYNC_FILE_RANGE_WRITE;
     if (mode == FLUSH_SYNC) {
       flags |= SYNC_FILE_RANGE_WAIT_AFTER;
@@ -569,6 +590,7 @@ class PosixWritableFile : public WritableFile {
     if (sync_file_range(fd_, offset, length, flags) < 0) {
       return IOError(filename_, errno);
     }
+#endif
     return Status::OK();
   }
 
@@ -599,16 +621,21 @@ class PosixWritableFile : public WritableFile {
   virtual string ToString() const OVERRIDE { return filename_; }
 
   virtual Status PunchHole(uint64_t offset, uint64_t length) OVERRIDE {
+#ifdef linux
     if (fallocate(fd_, FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE, offset, length) < 0) {
       return IOError(filename_, errno);
     }
     return Status::OK();
+#else
+    return Status::NotSupported("Hole punching not supported on this platform");
+#endif
   }
 
  private:
 
   Status DoWritev(const vector<Slice>& data_vector,
                   size_t offset, size_t n) {
+#ifdef linux
     DCHECK_LE(n, IOV_MAX);
 
     struct iovec iov[n];
@@ -637,6 +664,24 @@ class PosixWritableFile : public WritableFile {
           Substitute("pwritev error: expected to write $0 bytes, wrote $1 bytes instead",
                      nbytes, written));
     }
+#else
+    for (size_t i = offset; i < offset + n; i++) {
+      const Slice& data = data_vector[i];
+      ssize_t written = pwrite(fd_, data.data(), data.size(), filesize_);
+      if (PREDICT_FALSE(written == -1)) {
+        int err = errno;
+        return IOError("pwrite error", err);
+      }
+
+      filesize_ += written;
+
+      if (PREDICT_FALSE(written != data.size())) {
+        return Status::IOError(
+            Substitute("pwrite error: expected to write $0 bytes, wrote $1 bytes instead",
+                       data.size(), written));
+      }
+    }
+#endif
 
     return Status::OK();
   }
