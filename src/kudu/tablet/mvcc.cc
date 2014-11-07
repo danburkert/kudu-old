@@ -3,13 +3,17 @@
 // All rights reserved.
 
 #include <boost/foreach.hpp>
+
+// Needs to come before locks.hpp otherwise cmath will undefine needed stuff.
+#include "kudu/gutil/mathlimits.h"
+
 #include <boost/thread/locks.hpp>
 #include <boost/thread/mutex.hpp>
+
 #include <glog/logging.h>
 #include <algorithm>
 
 #include "kudu/gutil/map-util.h"
-#include "kudu/gutil/mathlimits.h"
 #include "kudu/gutil/port.h"
 #include "kudu/gutil/stringprintf.h"
 #include "kudu/gutil/strings/strcat.h"

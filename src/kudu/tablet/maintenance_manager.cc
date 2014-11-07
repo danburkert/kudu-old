@@ -10,7 +10,12 @@
 #include <set>
 #include <stdint.h>
 #include <string>
+#ifdef __linux__
 #include <sys/sysinfo.h>
+#elif defined(__APPLE__)
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#endif
 #include <tr1/memory>
 #include <utility>
 
@@ -359,10 +364,18 @@ Status MaintenanceManager::CalculateMemTotal(uint64_t* total) {
                            ErrnoToString(ret), ret);
   }
   *total = info.totalram;
-  return Status::OK();
+#elif defined(__APPLE__)
+  int mib[2] = { CTL_HW, HW_MEMSIZE };
+  size_t length = sizeof(*total);
+  if (sysctl(mib, 2, total, &length, NULL, 0) < 0) {
+    int ret = errno;
+    return Status::IOError("sysctl() failed",
+                           ErrnoToString(ret), ret);
+  }
 #else
 #error "please implement CalculateMemTotal for this platform"
 #endif
+  return Status::OK();
 }
 
 void MaintenanceManager::GetMaintenanceManagerStatusDump(MaintenanceManagerStatusPB* out_pb) {
