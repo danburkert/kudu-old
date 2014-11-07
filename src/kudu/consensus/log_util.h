@@ -150,7 +150,7 @@ class ReadableLogSegment : public RefCountedThreadSafe<ReadableLogSegment> {
     return readable_file_;
   }
 
-  const uint64_t file_size() const {
+  const size_t file_size() const {
     return file_size_;
   }
 
@@ -201,7 +201,7 @@ class ReadableLogSegment : public RefCountedThreadSafe<ReadableLogSegment> {
   const std::string path_;
 
   // the size of the readable file
-  uint64_t file_size_;
+  size_t file_size_;
 
   // The offset up to which we can read the file.
   // For already written segments this is fixed and equal to the file size
