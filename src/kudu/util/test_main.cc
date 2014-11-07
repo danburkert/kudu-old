@@ -13,34 +13,37 @@
 DEFINE_int32(test_timeout_after, 0,
              "Maximum total seconds allowed for all unit tests in the suite. Default: disabled");
 
+#ifdef linux
 // Start timer that kills the process if --test_timeout_after is exceeded before
 // the tests complete.
 static void CreateAndStartTimer(timer_t* timerid, struct sigevent* sevp, struct itimerspec* its);
 
 // Gracefully kill the process.
 static void KillTestOnTimeout(sigval_t sigval);
+#endif
 
 int main(int argc, char **argv) {
-#if defined(__APPLE__)
-  int ret = 0;
-#else
   google::InstallFailureSignalHandler();
   ::testing::InitGoogleTest(&argc, argv);
   google::ParseCommandLineFlags(&argc, &argv, true);
 
+#ifdef linux
   // Create the test-timeout timer.
   timer_t timerid;
   struct sigevent sevp;
   struct itimerspec its;
   CreateAndStartTimer(&timerid, &sevp, &its);
+#endif
 
   int ret = RUN_ALL_TESTS();
 
+#ifdef linux
   CHECK_ERR(::timer_delete(timerid));
 #endif
   return ret;
 }
 
+#ifdef linux
 static void CreateAndStartTimer(timer_t* timerid, struct sigevent* sevp, struct itimerspec* its) {
   // Create the test-timeout timer.
   sevp->sigev_notify = SIGEV_THREAD;
@@ -64,3 +67,5 @@ static void KillTestOnTimeout(sigval_t sigval) {
   // ...and abort.
   LOG(FATAL) << "Maximum unit test time exceeded (" << FLAGS_test_timeout_after << " sec)";
 }
+#endif
+
