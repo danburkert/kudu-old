@@ -8,6 +8,10 @@
 #include <sys/time.h>
 #include <time.h>
 #include <string>
+#if defined(__APPLE__)
+#include <mach/clock.h>
+#include <mach/mach.h>
+#endif  // defined(__APPLE__)
 
 #include "kudu/gutil/macros.h"
 #include "kudu/gutil/stringprintf.h"
@@ -193,7 +197,18 @@ class Stopwatch {
     CHECK_EQ(0, getrusage((mode_ == THIS_THREAD) ? RUSAGE_THREAD : RUSAGE_SELF, &usage));
     struct timespec wall;
 
+#if defined(linux)
     CHECK_EQ(0, clock_gettime(CLOCK_MONOTONIC, &wall));
+#elif defined(__APPLE__)
+    clock_serv_t cclock;
+    mach_timespec_t mts;
+    host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+    clock_get_time(cclock, &mts);
+    mach_port_deallocate(mach_task_self(), cclock);
+    ts.tv_sec = mts.tv_sec;
+    ts.tv_nsec = mts.tv_nsec;
+    ts.tv_usec = mts.tv_nsec * 1000;
+#endif  // defined(linux)
     times->wall   = wall.tv_sec * 1000000000L + wall.tv_nsec;
     times->user   = usage.ru_utime.tv_sec * 1000000000L + usage.ru_utime.tv_usec * 1000;
     times->system = usage.ru_stime.tv_sec * 1000000000L + usage.ru_stime.tv_usec * 1000;

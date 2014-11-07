@@ -4,6 +4,9 @@
 #include <algorithm>
 #include <boost/bind.hpp>
 #include <boost/thread/locks.hpp>
+#if defined(__APPLE__)
+#include <time.h>
+#endif  // defined(__APPLE__)
 #include <glog/logging.h>
 #include <sys/timex.h>
 
@@ -272,7 +275,11 @@ Status HybridClock::WaitUntilAfter(const Timestamp& then_latest) {
 
   while (true) {
     timespec remaining;
+#if defined(linux)
     int rc = clock_nanosleep(CLOCK_MONOTONIC, 0, &requested, &remaining);
+#elif defined(__APPLE__)
+    int rc = clock_nanosleep(&requested, &remaining);
+#endif  // defined(linux)
     if (PREDICT_TRUE(rc == 0)) {
       break;
     }
