@@ -237,7 +237,7 @@ TEST_F(RemoteBootstrapTest, TestBlocksEqual) {
 
       gscoped_ptr<ReadableBlock> tablet_block;
       ASSERT_STATUS_OK(fs_manager()->OpenBlock(block_id, &tablet_block));
-      uint64_t tablet_block_size = 0;
+      size_t tablet_block_size = 0;
       ASSERT_STATUS_OK(tablet_block->Size(&tablet_block_size));
       buf.reserve(tablet_block_size);
       ASSERT_STATUS_OK(tablet_block->Read(0, tablet_block_size, &data, buf.data()));
@@ -264,7 +264,7 @@ TEST_F(RemoteBootstrapTest, TestBlockFileClosedOnLastRead) {
 
   gscoped_ptr<ReadableBlock> tablet_block;
   ASSERT_STATUS_OK(fs_manager()->OpenBlock(block_id, &tablet_block));
-  uint64_t block_size = 0;
+  size_t block_size = 0;
   ASSERT_STATUS_OK(tablet_block->Size(&block_size));
 
   // Grab data in several chunks.

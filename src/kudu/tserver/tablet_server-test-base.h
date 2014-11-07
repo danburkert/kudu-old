@@ -43,9 +43,11 @@
 
 DEFINE_int32(rpc_timeout, 1000, "Timeout for RPC calls, in seconds");
 DEFINE_int32(num_updater_threads, 1, "Number of updating threads to launch");
-DECLARE_bool(use_hybrid_clock);
 DECLARE_bool(log_force_fsync_all);
+#ifdef __linux__
+DECLARE_bool(use_hybrid_clock);
 DECLARE_int32(max_clock_sync_error_usec);
+#endif
 DECLARE_bool(enable_maintenance_manager);
 DECLARE_bool(enable_data_block_fsync);
 
@@ -60,11 +62,13 @@ class TabletServerTest : public KuduTest {
     : schema_(GetSimpleTestSchema()),
       ts_test_metric_context_(&ts_test_metric_registry_, "ts_server-test") {
 
+#ifdef __linux__
     // Use the hybrid clock for TS tests
     FLAGS_use_hybrid_clock = true;
 
     // increase the max error tolerance, for tests, to 10 seconds.
     FLAGS_max_clock_sync_error_usec = 10000000;
+#endif
 
     // Disable the maintenance ops manager since we want to trigger our own
     // maintenance operations at predetermined times.

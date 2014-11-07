@@ -38,7 +38,7 @@ Status RemoteBootstrapClientTest::CompareFileContents(const string& path1, const
   RETURN_NOT_OK(env_util::OpenFileForRandom(fs_manager_->env(), path1, &file1));
   RETURN_NOT_OK(env_util::OpenFileForRandom(fs_manager_->env(), path2, &file2));
 
-  uint64_t size1, size2;
+  size_t size1, size2;
   RETURN_NOT_OK(file1->Size(&size1));
   RETURN_NOT_OK(file2->Size(&size2));
   if (size1 != size2) {

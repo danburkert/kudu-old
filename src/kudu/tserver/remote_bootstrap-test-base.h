@@ -93,7 +93,7 @@ class RemoteBootstrapTest : public TabletServerTest {
     gscoped_ptr<fs::ReadableBlock> block;
     RETURN_NOT_OK(fs_manager->OpenBlock(block_id, &block));
 
-    uint64_t size = 0;
+    size_t size = 0;
     RETURN_NOT_OK(block->Size(&size));
     scratch->resize(size);
     RETURN_NOT_OK(block->Read(0, size, slice, scratch->data()));

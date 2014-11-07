@@ -162,6 +162,7 @@ TEST_F(TabletServerTest, TestInsert) {
   ASSERT_GE(now_after.value(), now_before.value());
 }
 
+#ifdef __linux__
 TEST_F(TabletServerTest, TestExternalConsistencyModes_ClientPropagated) {
   WriteRequestPB req;
   req.set_tablet_id(kTabletId);
@@ -280,6 +281,7 @@ TEST_F(TabletServerTest, TestExternalConsistencyModes_CommitWait) {
     ASSERT_GE(write_took, error_before);
   }
 }
+#endif
 
 
 TEST_F(TabletServerTest, TestInsertAndMutate) {
@@ -911,6 +913,7 @@ TEST_F(TabletServerTest, TestSnapshotScan_WithoutSnapshotTimestamp) {
   ASSERT_GE(resp.snap_timestamp(), now.ToUint64());
 }
 
+#ifdef __linux__
 // Tests that a snapshot in the future (beyond what clock->Now() returns) fails as an
 // invalid snapshot.
 TEST_F(TabletServerTest, TestSnapshotScan_SnapshotInTheFutureFails) {
@@ -1049,6 +1052,7 @@ TEST_F(TabletServerTest, TestSnapshotScan__SnapshotInTheFutureBeyondPropagatedTi
     ASSERT_EQ(TabletServerErrorPB::INVALID_SNAPSHOT, resp.error().code());
   }
 }
+#endif
 
 TEST_F(TabletServerTest, TestScanWithStringPredicates) {
   InsertTestRowsDirect(0, 100);

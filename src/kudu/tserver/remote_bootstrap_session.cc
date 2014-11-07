@@ -198,7 +198,7 @@ static Status ReadFileChunkToBuf(const Info* info,
 }
 
 Status RemoteBootstrapSession::GetBlockPiece(const BlockId& block_id,
-                                             uint64_t offset, int64_t client_maxlen,
+                                             size_t offset, int64_t client_maxlen,
                                              string* data, int64_t* block_file_size,
                                              RemoteBootstrapErrorPB::Code* error_code) {
   ImmutableReadableBlockInfo* block_info;
@@ -225,7 +225,7 @@ Status RemoteBootstrapSession::GetBlockPiece(const BlockId& block_id,
 }
 
 Status RemoteBootstrapSession::GetLogSegmentPiece(uint64_t segment_seqno,
-                                                  uint64_t offset, int64_t client_maxlen,
+                                                  size_t offset, int64_t client_maxlen,
                                                   std::string* data, int64_t* block_file_size,
                                                   RemoteBootstrapErrorPB::Code* error_code) {
   ImmutableRandomAccessFileInfo* file_info;
@@ -264,7 +264,7 @@ static Status AddToCacheUnlocked(Collection* const cache,
                                  const Readable& readable,
                                  Info** info,
                                  RemoteBootstrapErrorPB::Code* error_code) {
-  uint64_t size;
+  size_t size;
   Status s = readable->Size(&size);
   if (PREDICT_FALSE(!s.ok())) {
     *error_code = RemoteBootstrapErrorPB::IO_ERROR;
