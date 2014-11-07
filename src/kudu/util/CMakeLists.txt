@@ -17,6 +17,12 @@ target_link_libraries(histogram_proto
 # kudu_util
 #######################################
 
+if (APPLE)
+  set(SEMAPHORE_CC "semaphore_macosx.cc")
+else ()
+  set(SEMAPHORE_CC "semaphore.cc")
+endif()
+
 add_library(kudu_util
   atomic.cc
   bitmap.cc
@@ -59,7 +65,7 @@ add_library(kudu_util
   random_util.cc
   resettable_heartbeater.cc
   rwc_lock.cc
-  semaphore.cc
+  ${SEMAPHORE_CC}
   slice.cc
   spinlock_profiling.cc
   status.cc
