@@ -408,7 +408,7 @@ void* Thread::SuperviseThread(void* arg) {
 #ifdef linux
   int64_t system_tid = syscall(SYS_gettid);
 #else
-  int64_t system_tid = syscall(pthread_mach_thread_np(pthread_self()));
+  int64_t system_tid = pthread_mach_thread_np(pthread_self());
 #endif
   if (system_tid == -1) {
     string error_msg = ErrnoToString(errno);
