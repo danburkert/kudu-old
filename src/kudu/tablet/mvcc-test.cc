@@ -11,7 +11,9 @@
 #include "kudu/tablet/mvcc.h"
 #include "kudu/util/test_util.h"
 
+#ifdef __linux__
 DECLARE_int32(max_clock_sync_error_usec);
+#endif
 
 namespace kudu { namespace tablet {
 
@@ -22,8 +24,11 @@ class MvccTest : public KuduTest {
  public:
   MvccTest() :
     clock_(server::LogicalClock::CreateStartingAt(Timestamp::kInitialTimestamp)) {
+
+#ifdef __linux__
     // Increase clock sync tolerance so test doesn't fail on jenkins.
     FLAGS_max_clock_sync_error_usec = 10 * 1000 * 1000;
+#endif
   }
 
   void WaitForSnapshotAtTSThread(MvccManager* mgr, Timestamp ts) {
@@ -138,6 +143,7 @@ TEST_F(MvccTest, TestMvccMultipleInFlight) {
   ASSERT_TRUE(snap.IsCommitted(t3));
 }
 
+#if __linux__
 TEST_F(MvccTest, TestOutOfOrderTxns) {
   scoped_refptr<Clock> hybrid_clock(new HybridClock());
   ASSERT_STATUS_OK(hybrid_clock->Init());
@@ -174,6 +180,7 @@ TEST_F(MvccTest, TestOutOfOrderTxns) {
   MvccSnapshot s3(mgr);
   EXPECT_FALSE(s3.IsCommitted(normal_txn_2));
 }
+#endif
 
 // Tests starting transaction at a point-in-time in the past and committing them.
 // This is disconnected from the current time (whatever is returned from clock->Now())
