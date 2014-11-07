@@ -87,7 +87,7 @@ class KernelStackWatchdog {
 
 #if defined(__APPLE__)
 inline ScopedWatchKernelStack::ScopedWatchKernelStack(const char* label)
-  : tid_(0) {}
+  : tid_(pthread_mach_thread_np(pthread_self())) {}
 #else
 inline ScopedWatchKernelStack::ScopedWatchKernelStack(const char* label)
   : tid_(syscall(SYS_gettid)) {
