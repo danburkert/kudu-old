@@ -3,7 +3,6 @@
 // All rights reserved.
 
 #include <fcntl.h>
-#include <linux/falloc.h>
 #include <string>
 #include <sys/types.h>
 #include <tr1/memory>
@@ -22,6 +21,9 @@
 #include "kudu/util/env_util.h"
 #include "kudu/util/memenv/memenv.h"
 
+#if !defined(__APPLE__)
+#include <linux/falloc.h>
+#endif  // !defined(__APPLE__)
 // Copied from falloc.h. Useful for older kernels that lack support for
 // hole punching; fallocate(2) will return EOPNOTSUPP.
 #ifndef FALLOC_FL_KEEP_SIZE
@@ -54,6 +56,7 @@ class TestEnv : public KuduTest {
     static bool checked = false;
     if (checked) return;
 
+#ifdef linux
     int fd = creat(GetTestPath("check-fallocate").c_str(), S_IWUSR);
     PCHECK(fd >= 0);
     int err = fallocate(fd, 0, 0, 4096);
@@ -72,6 +75,7 @@ class TestEnv : public KuduTest {
     }
 
     close(fd);
+#endif
 
     checked = true;
   }
