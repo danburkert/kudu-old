@@ -30,7 +30,9 @@
 
 DEFINE_int32(num_reactor_threads, 4, "Number of libev reactor threads to start."
              " (Advanced option).");
+#ifdef linux
 DECLARE_bool(use_hybrid_clock);
+#endif
 
 using std::string;
 using std::vector;
@@ -47,11 +49,15 @@ ServerBase::ServerBase(const ServerBaseOptions& options,
     web_server_(new Webserver(options.webserver_opts)),
     is_first_run_(false),
     options_(options) {
+#ifdef linux
   if (FLAGS_use_hybrid_clock) {
     clock_ = new HybridClock();
   } else {
     clock_ = LogicalClock::CreateStartingAt(Timestamp::kInitialTimestamp);
   }
+#else
+  clock_ = LogicalClock::CreateStartingAt(Timestamp::kInitialTimestamp);
+#endif
   CHECK_OK(StartThreadInstrumentation(metric_registry_.get(), web_server_.get()));
   CHECK_OK(codegen::CompilationManager::GetSingleton()->StartInstrumentation(
              metric_registry_.get()));
