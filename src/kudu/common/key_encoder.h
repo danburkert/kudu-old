@@ -10,7 +10,17 @@
 #include <smmintrin.h>
 #include <string.h>
 #include <climits>
+#if defined(linux)
 #include <bits/endian.h>
+#elif defined(__APPLE__)
+#include <machine/endian.h>
+#define        htobe16(x)     OSSwapBigToHostInt16(x)
+#define        be16toh(x)     OSSwapHostToBigInt16(x)
+#define        htobe32(x)     OSSwapBigToHostInt32(x)
+#define        be32toh(x)     OSSwapHostToBigInt32(x)
+#define        htobe64(x)     OSSwapBigToHostInt64(x)
+#define        be64toh(x)     OSSwapHostToBigInt64(x)
+#endif  // define(linux)
 
 #include "kudu/common/types.h"
 #include "kudu/gutil/macros.h"
