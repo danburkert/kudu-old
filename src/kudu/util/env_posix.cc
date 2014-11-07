@@ -9,7 +9,9 @@
 #include <fcntl.h>
 #include <fts.h>
 #include <glog/logging.h>
+#if !defined(__APPLE__)
 #include <linux/falloc.h>
+#endif  // !defined(__APPLE__)
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,6 +36,8 @@
 #include "kudu/util/slice.h"
 #include "kudu/util/stopwatch.h"
 
+#if !defined(__APPLE__)
+#include <linux/falloc.h>
 // Copied from falloc.h. Useful for older kernels that lack support for
 // hole punching; fallocate(2) will return EOPNOTSUPP.
 #ifndef FALLOC_FL_KEEP_SIZE
@@ -42,6 +46,7 @@
 #ifndef FALLOC_FL_PUNCH_HOLE
 #define FALLOC_FL_PUNCH_HOLE  0x02 /* de-allocates range */
 #endif
+#endif  // !defined(__APPLE__)
 
 using base::subtle::Atomic64;
 using base::subtle::Barrier_AtomicIncrement;

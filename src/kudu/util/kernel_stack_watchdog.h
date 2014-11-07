@@ -25,7 +25,9 @@
 
 #include <tr1/unordered_map>
 
+#if !defined(__APPLE__)
 #include <syscall.h>
+#endif  // !defined(__APPLE__)
 #include "kudu/gutil/macros.h"
 #include "kudu/gutil/singleton.h"
 #include "kudu/gutil/ref_counted.h"
@@ -83,6 +85,10 @@ class KernelStackWatchdog {
   DISALLOW_COPY_AND_ASSIGN(KernelStackWatchdog);
 };
 
+#if defined(__APPLE__)
+inline ScopedWatchKernelStack::ScopedWatchKernelStack(const char* label)
+  : tid_(0) {}
+#else
 inline ScopedWatchKernelStack::ScopedWatchKernelStack(const char* label)
   : tid_(syscall(SYS_gettid)) {
   KernelStackWatchdog::GetInstance()->Watch(tid_, label);
@@ -91,6 +97,7 @@ inline ScopedWatchKernelStack::ScopedWatchKernelStack(const char* label)
 inline ScopedWatchKernelStack::~ScopedWatchKernelStack() {
   KernelStackWatchdog::GetInstance()->StopWatching(tid_);
 }
+#endif  // defined(__APPLE__)
 
 } // namespace kudu
 #endif /* KUDU_UTIL_KERNEL_STACK_WATCHDOG_H */

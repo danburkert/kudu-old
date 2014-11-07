@@ -5,6 +5,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#if defined(__APPLE__)
+#include <unistd.h> // for HOST_NAME_MAX
+#endif  // defined(__APPLE__)
 
 #include <algorithm>
 #include <boost/foreach.hpp>
