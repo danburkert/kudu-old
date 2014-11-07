@@ -11,6 +11,7 @@
 #if defined(__APPLE__)
 #include <mach/clock.h>
 #include <mach/mach.h>
+#include <mach/task.h>
 #endif  // defined(__APPLE__)
 
 #include "kudu/gutil/macros.h"
@@ -194,12 +195,24 @@ class Stopwatch {
  private:
   void GetTimes(CpuTimes *times) const {
     struct rusage usage;
-    CHECK_EQ(0, getrusage((mode_ == THIS_THREAD) ? RUSAGE_THREAD : RUSAGE_SELF, &usage));
     struct timespec wall;
-
 #if defined(linux)
+    CHECK_EQ(0, getrusage((mode_ == THIS_THREAD) ? RUSAGE_THREAD : RUSAGE_SELF, &usage));
     CHECK_EQ(0, clock_gettime(CLOCK_MONOTONIC, &wall));
 #elif defined(__APPLE__)
+    if (mode_ == THIS_THREAD) {
+      // Adapted from http://blog.kuriositaet.de/?p=257.
+      struct task_basic_info t_info;
+      mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
+      CHECK_EQ(KERN_SUCCESS, task_info(mach_task_self(),
+        TASK_THREAD_TIMES_INFO, (task_info_t)&t_info, &t_info_count));
+      usage.ru_utime.tv_sec = t_info.user_time.seconds;
+      usage.ru_utime.tv_usec = t_info.user_time.microseconds;
+      usage.ru_stime.tv_sec = t_info.system_time.seconds;
+      usage.ru_stime.tv_usec = t_info.system_time.microseconds;
+    } else {
+      CHECK_EQ(0, getrusage(RUSAGE_SELF, &usage));
+    }
     clock_serv_t cclock;
     mach_timespec_t mts;
     host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
