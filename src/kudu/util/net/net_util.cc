@@ -5,9 +5,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#if defined(__APPLE__)
-#include <unistd.h> // for HOST_NAME_MAX
-#endif  // defined(__APPLE__)
 
 #include <algorithm>
 #include <boost/foreach.hpp>
@@ -25,6 +22,11 @@
 #include "kudu/util/errno.h"
 #include "kudu/util/net/net_util.h"
 #include "kudu/util/net/sockaddr.h"
+
+// Mac OS 10.9 does not appear to define HOST_NAME_MAX in unistd.h
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX 64
+#endif
 
 using std::tr1::unordered_set;
 using std::vector;
