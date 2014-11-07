@@ -39,6 +39,11 @@
 #include "kudu/util/net/net_util.h"
 #include "kudu/util/url-coding.h"
 
+// Some platforms refer to sighandler_t as sig_t.
+#ifndef sighandler_t
+#define sighandler_t sig_t
+#endif
+
 using std::string;
 using std::stringstream;
 using std::vector;
