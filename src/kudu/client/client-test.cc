@@ -41,8 +41,10 @@
 
 DECLARE_bool(enable_data_block_fsync);
 DECLARE_int32(heartbeat_interval_ms);
+#ifdef __linux__
 DECLARE_bool(use_hybrid_clock);
 DECLARE_int32(max_clock_sync_error_usec);
+#endif
 
 DEFINE_int32(test_scan_num_rows, 1000, "Number of rows to insert and scan");
 
@@ -84,11 +86,13 @@ class ClientTest : public KuduTest {
     // Reduce the TS<->Master heartbeat interval
     FLAGS_heartbeat_interval_ms = 10;
 
+#ifdef __linux__
     // Use the hybrid clock for client tests
     FLAGS_use_hybrid_clock = true;
 
     // increase the max error tolerance, for tests, to 10 seconds.
     FLAGS_max_clock_sync_error_usec = 10000000;
+#endif
 
     // Start minicluster and wait for tablet servers to connect to master.
     cluster_.reset(new MiniCluster(env_.get(), MiniClusterOptions()));
@@ -470,6 +474,7 @@ TEST_F(ClientTest, TestScan) {
   DoTestScanWithKeyPredicate();
 }
 
+#ifdef __linux__
 TEST_F(ClientTest, TestScanAtSnapshot) {
   int half_the_rows = FLAGS_test_scan_num_rows / 2;
 
@@ -517,6 +522,7 @@ TEST_F(ClientTest, TestScanAtSnapshot) {
   ASSERT_EQ(half_the_rows, sum);
 
 }
+#endif
 
 TEST_F(ClientTest, TestScanMultiTablet) {
   // 5 tablets, each with 10 rows worth of space.
