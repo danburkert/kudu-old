@@ -45,7 +45,7 @@ target_link_libraries(server_common
 #########################################
 
 set(KUDU_TEST_LINK_LIBS server_common ${KUDU_MIN_TEST_LIBS})
-if (not APPLE)
+if (NOT APPLE)
   ADD_KUDU_TEST(hybrid_clock-test)
 endif ()
 ADD_KUDU_TEST(logical_clock-test)
