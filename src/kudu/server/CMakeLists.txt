@@ -83,6 +83,10 @@ set(SERVER_PROCESS_SRCS
   webui_util.cc
 )
 
+if (APPLE)
+  set(SERVER_PROCESS_APPLE_LIBS crypto ssl)
+endif ()
+
 add_library(server_process ${SERVER_PROCESS_SRCS})
 target_link_libraries(server_process
   server_base_proto
@@ -93,8 +97,7 @@ target_link_libraries(server_process
   krpc
   kudu_util
   squeasel
-  crypto
-  ssl)
+  ${SERVER_PROCESS_APPLE_LIBS})
 
 # This module depends on tcmalloc and profiler directly, so need to make
 # sure that they get linked in the right order.
