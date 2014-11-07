@@ -14,9 +14,9 @@ static GoogleOnceType crc32c_once = GOOGLE_ONCE_INIT;
 static Crc* crc32c_instance = NULL;
 
 static void InitCrc32cInstance() {
-#ifdef TCMALLOC_ENABLED
+#if defined(TCMALLOC_ENABLED) && !defined(__APPLE__)
   HeapLeakChecker::Disabler disabler; // CRC instance is never freed.
-#endif // TCMALLOC_ENABLED
+#endif // TCMALLOC_ENABLED && !defined(__APPLE__)
   // TODO: Is initial = 0 and roll window = 4 appropriate for all cases?
   crc32c_instance = crcutil_interface::CRC::CreateCrc32c(true, 0, 4, NULL);
 }

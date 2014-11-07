@@ -90,7 +90,12 @@ target_link_libraries(kudu_util
   histogram_proto
   protobuf
   glog
-  rt)
+  gflags)
+
+if(NOT APPLE)
+  target_link_libraries(kudu_util
+    rt)
+endif()
 
 # We use MallocExtension and HeapChecker
 if(${KUDU_TCMALLOC_AVAILABLE})
