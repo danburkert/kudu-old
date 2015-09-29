@@ -24,6 +24,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#if defined(__APPLE__)
+#include <mach/clock.h>
+#include <mach/mach.h>
+#endif  // defined(__APPLE__)
+
 // This is exactly like mktime() except it is guaranteed to return -1 on
 // failure.  Some versions of glibc allow mktime() to return negative
 // values which the standard says are undefined.  See the standard at
@@ -149,9 +154,15 @@ bool WallTime_Parse_Timezone(const char* time_spec,
 }
 
 WallTime WallTime_Now() {
+#if defined(__APPLE__)
+  mach_timespec_t ts;
+  walltime_internal::GetCurrentTime(&ts);
+  return ts.tv_sec + ts.tv_nsec / static_cast<double>(1e9);
+#else
   timespec ts;
   clock_gettime(CLOCK_REALTIME, &ts);
   return ts.tv_sec + ts.tv_nsec / static_cast<double>(1e9);
+#endif  // defined(__APPLE__)
 }
 
 void StringAppendStrftime(string* dst,
