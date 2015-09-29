@@ -29,6 +29,10 @@
 #include "kudu/util/errno.h"
 #include "kudu/util/monotime.h"
 
+#if defined(__APPLE__)
+typedef sig_t sighandler_t;
+#endif  // defined(__APPLE__)
+
 // Evil hack to grab a few useful functions from glog
 namespace google {
 
@@ -200,7 +204,7 @@ std::string DumpThreadStack(pid_t tid) {
   // We use the raw syscall here instead of kill() to ensure that we don't accidentally
   // send a signal to some other process in the case that the thread has exited and
   // the TID been recycled.
-  if (syscall(SYS_tgkill, getpid(), tid, g_stack_trace_signum) != 0) {
+  if (kill(tid, SIGUSR1) != 0) {
     {
       SignalCommunication::Lock l;
       g_comm.target_tid = 0;

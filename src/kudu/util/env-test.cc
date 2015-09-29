@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <fcntl.h>
-#include <linux/falloc.h>
 #include <string>
 #include <sys/types.h>
 #include <tr1/memory>
@@ -35,6 +34,9 @@
 #include "kudu/util/malloc.h"
 #include "kudu/util/memenv/memenv.h"
 
+#if !defined(__APPLE__)
+#include <linux/falloc.h>
+#endif  // !defined(__APPLE__)
 // Copied from falloc.h. Useful for older kernels that lack support for
 // hole punching; fallocate(2) will return EOPNOTSUPP.
 #ifndef FALLOC_FL_KEEP_SIZE
@@ -68,6 +70,7 @@ class TestEnv : public KuduTest {
     static bool checked = false;
     if (checked) return;
 
+#ifdef linux
     int fd = creat(GetTestPath("check-fallocate").c_str(), S_IWUSR);
     PCHECK(fd >= 0);
     int err = fallocate(fd, 0, 0, 4096);
@@ -86,6 +89,7 @@ class TestEnv : public KuduTest {
     }
 
     close(fd);
+#endif
 
     checked = true;
   }
@@ -247,7 +251,7 @@ class TestEnv : public KuduTest {
     ASSERT_OK(file->Sync());
 
     // the writable file size should now report 1 MB
-    ASSERT_EQ(kOneMb, file->Size());
+    ASSERT_EQ((uint64_t) kOneMb, file->Size());
     ASSERT_OK(env_->GetFileSize(test_path, &size));
     ASSERT_EQ(64 * kOneMb, size);
 
@@ -323,7 +327,7 @@ class TestEnv : public KuduTest {
     // Check that the file has both strings.
     shared_ptr<RandomAccessFile> reader;
     ASSERT_OK(env_util::OpenFileForRandom(env_.get(), test_path, &reader));
-    uint64_t size;
+    size_t size;
     ASSERT_OK(reader->Size(&size));
     ASSERT_EQ(first.length() + second.length(), size);
     Slice s;
@@ -417,7 +421,7 @@ class ShortReadRandomAccessFile : public RandomAccessFile {
     return wrapped_->Read(offset, short_n, result, scratch);
   }
 
-  virtual Status Size(uint64_t *size) const OVERRIDE {
+  virtual Status Size(size_t *size) const OVERRIDE {
     return wrapped_->Size(size);
   }
 
@@ -500,7 +504,7 @@ TEST_F(TestEnv, TestOpenEmptyRandomAccessFile) {
   ASSERT_NO_FATAL_FAILURE(WriteTestFile(env, test_file, 0));
   gscoped_ptr<RandomAccessFile> readable_file;
   ASSERT_OK(env->NewRandomAccessFile(test_file, &readable_file));
-  uint64_t size;
+  size_t size;
   ASSERT_OK(readable_file->Size(&size));
   ASSERT_EQ(0, size);
 }
