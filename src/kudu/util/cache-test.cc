@@ -27,7 +27,9 @@
 #include "kudu/util/metrics.h"
 #include "kudu/util/test_util.h"
 
+#if defined(__linux__)
 DECLARE_string(nvm_cache_path);
+#endif // defined(__linux__)
 
 namespace kudu {
 
@@ -63,12 +65,15 @@ class CacheTest : public KuduTest,
   static const int kCacheSize = 14*1024*1024;
 
   virtual void SetUp() OVERRIDE {
+
+#if defined(__linux__)
     if (google::GetCommandLineFlagInfoOrDie("nvm_cache_path").is_default) {
       FLAGS_nvm_cache_path = GetTestPath("nvm-cache");
       ASSERT_OK(Env::Default()->CreateDir(FLAGS_nvm_cache_path));
     }
 
     cache_.reset(NewLRUCache(GetParam(), kCacheSize, "cache_test"));
+#endif // defined(__linux__)
 
     MemTracker::FindTracker("cache_test-sharded_lru_cache", &mem_tracker_);
     // Since nvm cache does not have memtracker due to the use of
@@ -100,7 +105,12 @@ class CacheTest : public KuduTest,
     cache_->Erase(EncodeKey(key));
   }
 };
+
+#if defined(__linux__)
 INSTANTIATE_TEST_CASE_P(CacheTypes, CacheTest, ::testing::Values(DRAM_CACHE, NVM_CACHE));
+#else
+INSTANTIATE_TEST_CASE_P(CacheTypes, CacheTest, ::testing::Values(DRAM_CACHE));
+#endif // defined(__linux__)
 
 TEST_P(CacheTest, TrackMemory) {
   if (mem_tracker_) {
