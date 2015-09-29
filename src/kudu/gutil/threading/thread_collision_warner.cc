@@ -31,8 +31,13 @@ static subtle::Atomic32 CurrentThread() {
 #else
 
 static subtle::Atomic32 CurrentThread() {
+#if defined(__APPLE__)
+  return pthread_mach_thread_np(pthread_self());
+#else
   return syscall(__NR_gettid);
+#endif
 }
+
 #endif
 
 void ThreadCollisionWarner::EnterSelf() {
